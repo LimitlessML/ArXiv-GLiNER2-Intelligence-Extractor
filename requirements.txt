@@ -1,0 +1,5 @@
+gliner2
+arxiv
+streamlit
+pandas
+spacy

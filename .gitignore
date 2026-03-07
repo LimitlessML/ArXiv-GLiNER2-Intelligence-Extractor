@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+
+# Environments
+.env
+.venv/
+venv/
+env/
+
+# Project notes (private)
+info-project/
+
+# ML models (can be gigabytes)
+*.pt
+*.bin
+*.safetensors
+
+# Streamlit
+.streamlit/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
