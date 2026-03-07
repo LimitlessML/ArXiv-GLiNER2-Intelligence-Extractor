@@ -3,3 +3,6 @@ arxiv
 streamlit
 pandas
 spacy
+requests
+beautifulsoup4
+pymupdf
