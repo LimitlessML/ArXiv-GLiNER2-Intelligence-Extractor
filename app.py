@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from extractor.fetcher import fetch_paper
 from extractor.ner import load_model, extract_from_paper, ENTITY_LABELS
+from extractor.visualizer import build_knowledge_graph, build_radar_chart, build_summary
 
 st.set_page_config(
     page_title="ArXiv Intelligence Extractor",
@@ -47,26 +48,55 @@ if st.button("Extract", type="primary") and input_str:
         if not all_entities:
             st.warning("No entities found.")
         else:
-            sections = ["All sections"] + list(all_results.keys())
-            selected_section = st.selectbox("Filter by section", sections)
+            # --- Intelligence Summary ---
+            st.markdown("### Intelligence Summary")
+            st.info(build_summary(all_results, paper))
 
-            filtered = all_entities if selected_section == "All sections" else [
-                e for e in all_entities if e["section"] == selected_section
-            ]
-
-            df = pd.DataFrame(filtered)
-            cols = st.columns(len(ENTITY_LABELS))
-            for i, label in enumerate(ENTITY_LABELS):
-                subset = df[df["label"] == label]["text"].tolist()
-                with cols[i]:
-                    st.markdown(f"**{label}**")
-                    for item in subset:
-                        st.markdown(f"- {item}")
+            # --- Stats bar ---
+            total = len(all_entities)
+            n_sections = len(all_results)
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Entities found", total)
+            col2.metric("Sections analyzed", n_sections)
+            col3.metric("Entity types", len(ENTITY_LABELS))
 
             st.divider()
-            st.dataframe(df, use_container_width=True)
-            csv = df.to_csv(index=False).encode("utf-8")
-            st.download_button("Download CSV", csv, "entities.csv", "text/csv")
+
+            # --- Tabs ---
+            tab1, tab2, tab3, tab4 = st.tabs([
+                "Entity Table", "Knowledge Graph", "Paper Fingerprint", "Raw Data"
+            ])
+
+            with tab1:
+                sections = ["All sections"] + list(all_results.keys())
+                selected_section = st.selectbox("Filter by section", sections)
+                filtered = all_entities if selected_section == "All sections" else [
+                    e for e in all_entities if e["section"] == selected_section
+                ]
+                df_filtered = pd.DataFrame(filtered)
+                cols = st.columns(len(ENTITY_LABELS))
+                for i, label in enumerate(ENTITY_LABELS):
+                    subset = df_filtered[df_filtered["label"] == label]["text"].tolist()
+                    with cols[i]:
+                        st.markdown(f"**{label}**")
+                        for item in subset:
+                            st.markdown(f"- {item}")
+
+            with tab2:
+                st.markdown("**Entity co-occurrence by section** — nodes colored by type, edges = shared section")
+                fig_graph = build_knowledge_graph(all_results)
+                st.plotly_chart(fig_graph, use_container_width=True)
+
+            with tab3:
+                st.markdown("**Paper fingerprint** — entity distribution by category")
+                fig = build_radar_chart(all_results)
+                st.plotly_chart(fig, use_container_width=True)
+
+            with tab4:
+                df = pd.DataFrame(all_entities)
+                st.dataframe(df, use_container_width=True)
+                csv = df.to_csv(index=False).encode("utf-8")
+                st.download_button("Download CSV", csv, "entities.csv", "text/csv")
 
     except ValueError as e:
         st.error(str(e))

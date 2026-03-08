@@ -29,9 +29,16 @@ def extract_from_chunks(model: GLiNER2, chunks: list[str]) -> list[dict]:
                     })
     return entities
 
-def extract_from_paper(model: GLiNER2, paper: dict) -> dict:
+KEY_SECTIONS = ["introduction", "method", "result", "conclusion", "experiment", "abstract"]
+
+def _is_key_section(name: str) -> bool:
+    return any(k in name.lower() for k in KEY_SECTIONS)
+
+def extract_from_paper(model: GLiNER2, paper: dict, full_paper: bool = False) -> dict:
     results = {}
     for section_name, chunks in paper["sections"].items():
+        if not full_paper and not _is_key_section(section_name):
+            continue
         entities = extract_from_chunks(model, chunks)
         if entities:
             results[section_name] = entities

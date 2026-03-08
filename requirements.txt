@@ -6,3 +6,5 @@ spacy
 requests
 beautifulsoup4
 pymupdf
+plotly
+networkx
